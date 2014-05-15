@@ -14,6 +14,7 @@ otherwise accompanies this software in either electronic or hard copy form.
 
 ************************************************************************************/
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 
 //-------------------------------------------------------------------------------------
@@ -146,14 +147,17 @@ public class OVRCameraController : OVRComponent
 	{
 		base.Start();
 		
-		// Get the required Rift infromation needed to set cameras
-		InitCameraControllerVariables();
+		OVRDevice.CallWhenInitDone(new Action(() =>
+		{
+			// Get the required Rift infromation needed to set cameras
+			InitCameraControllerVariables();
 		
-		// Initialize the cameras
-		UpdateCamerasDirtyFlag = true;
-		UpdateCameras();
+			// Initialize the cameras
+			UpdateCamerasDirtyFlag = true;
+			UpdateCameras();
 		
-		SetMaximumVisualQuality();
+			SetMaximumVisualQuality();
+		}));
 		
 	}
 		
@@ -566,6 +570,25 @@ public class OVRCameraController : OVRComponent
 		QualitySettings.maxQueuedFrames = 		0;
 		QualitySettings.anisotropicFiltering = 	AnisotropicFiltering.ForceEnable;
 		QualitySettings.vSyncCount = 			1;
+	}
+
+	// SetRenderTexture
+	public void SetRenderTexture(RenderTexture rt)
+	{
+		CameraLeft.targetTexture = rt;
+		CameraRight.targetTexture = rt;
+	}
+
+	// RenderLeft
+	public void RenderLeft()
+	{
+		CameraLeft.Render();
+	}
+
+	// RenderRight
+	public void RenderRight()
+	{
+		CameraRight.Render();
 	}
 	
 }

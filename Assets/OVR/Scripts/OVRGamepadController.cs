@@ -27,19 +27,6 @@ using System.Runtime.InteropServices;
 public class OVRGamepadController : MonoBehaviour
 {	
 	//-------------------------
-	// Import from plugin
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GamepadController_Initialize();
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GamepadController_Destroy();
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GamepadController_Update();
-	[DllImport ("OculusPlugin")]
-	private static extern float OVR_GamepadController_GetAxis(int axis);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GamepadController_GetButton(int button);
-	
-	//-------------------------
 	// Input enums
 	public enum Axis { LeftXAxis, LeftYAxis, RightXAxis, RightYAxis, LeftTrigger, RightTrigger };
 	public enum Button { A, B, X, Y, Up, Down, Left, Right, Start, Back, LStick, RStick, L1, R1 };
@@ -52,27 +39,47 @@ public class OVRGamepadController : MonoBehaviour
 	// GPC_Initialize
 	public static bool GPC_Initialize()
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_GamepadController_Initialize();
+#else
+		return false;
+#endif
 	}
 	// GPC_Destroy
 	public static bool GPC_Destroy()
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_GamepadController_Destroy();
+#else
+		return false;
+#endif
 	}
 	// GPC_Update
 	public static bool GPC_Update()
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_GamepadController_Update();
+#else
+		return false;
+#endif
 	}
 	// GPC_GetAxis
 	public static float GPC_GetAxis(int axis)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_GamepadController_GetAxis(axis);
+#else
+		return 0.0f;
+#endif
 	}
 	// GPC_GetButton
 	public static bool GPC_GetButton(int button)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_GamepadController_GetButton(button);
+#else
+		return false;
+#endif
 	}
 	
 	// GPC_Ready

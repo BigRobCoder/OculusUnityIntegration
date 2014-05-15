@@ -53,13 +53,25 @@ public class OVRPlayerController : OVRComponent
 	
 	// Initial direction of controller (passed down into CameraController)
 	private Quaternion OrientationOffset = Quaternion.identity;			
+	public Quaternion OrientationOffsetProperty
+	{
+		get { return OrientationOffset; }
+	}
 	// Rotation amount from inputs (passed down into CameraController)
 	private float 	YRotation 	 = 0.0f;
+	public float YRotationProperty
+	{
+		get { return YRotation; }
+	}
 	
 	// Transfom used to point player in a given direction; 
 	// We should attach objects to this if we want them to rotate 
 	// separately from the head (i.e. the body)
 	protected Transform DirXform = null;
+	public Transform DirXformProperty
+	{
+		get { return DirXform; }
+	}
 	
 	// We can adjust these to influence speed and rotation of player controller
 	private float MoveScaleMultiplier     = 1.0f; 
@@ -131,8 +143,19 @@ public class OVRPlayerController : OVRComponent
 		// Test: get Y from sensor 2 
 		if(OVRDevice.SensorCount == 2)
 		{
+			OVRDevice.GetPredictedOrientation(1, name + ".Update_Callback");
+		}
+		else
+		{
+			Update_Callback(null);
+		}
+	}
+	void Update_Callback(string paramsStr)
+	{
+		if (paramsStr != null)
+		{
 			Quaternion q = Quaternion.identity;
-			OVRDevice.GetPredictedOrientation(1, ref q);
+			OVRDevice.GetOrientation_Callback(paramsStr, ref q);
 			YfromSensor2 = q.eulerAngles.y;
 		}
 		

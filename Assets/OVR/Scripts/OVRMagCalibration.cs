@@ -147,11 +147,13 @@ public class OVRMagCalibration
 		
 		// All set, we can update the geometry with camera and positon values
 		Quaternion q = Quaternion.identity;
+#if TO_BE_IMPLEMENTED
 		if((CameraController != null) && (CameraController.PredictionOn == true))
 			OVRDevice.GetPredictedOrientation(0, ref q);
 		else
 			OVRDevice.GetOrientation(0, ref q);
-			
+#endif
+
 		Vector3 v = GeometryCompass.transform.localEulerAngles;
 		v.y = -q.eulerAngles.y + CurEulerRef.y;
 		GeometryCompass.transform.localEulerAngles = v;
@@ -378,10 +380,12 @@ public class OVRMagCalibration
 		OVRDevice.EnableMagYawCorrection(sensor, true);
 				
 		Quaternion q = Quaternion.identity;
+#if TO_BE_IMPLEMENTED
 		if((CameraController != null) && (CameraController.PredictionOn == true))
 			OVRDevice.GetPredictedOrientation(sensor, ref q);
 		else
 			OVRDevice.GetOrientation(sensor, ref q);
+#endif
 
 		CurEulerRef = q.eulerAngles;
 	}

@@ -165,6 +165,9 @@ public class OVRCamera : OVRComponent
 		if (CameraTexture != null)
 			SourceTexture = CameraTexture;
 		
+		// Set stereo texture
+		VWLStereoTexture.Set(name);
+
 		// Replace null material with lens correction material
 		Material material = null;
 		
@@ -175,7 +178,7 @@ public class OVRCamera : OVRComponent
 			else
 				material = GetComponent<OVRLensCorrection>().GetMaterial(CameraController.PortraitMode);				
 		}
-		
+
 		if(material!= null)
 		{
 			// Render with distortion
@@ -197,8 +200,7 @@ public class OVRCamera : OVRComponent
 	// SetCameraOrientation
 	void SetCameraOrientation()
 	{
-		Quaternion q   = Quaternion.identity;
-		Vector3    dir = Vector3.forward;		
+		bool gotOrientation = false;
 		
 		// Main camera has a depth of 0, so it will be rendered first
 		if(gameObject.camera.depth == 0.0f)
@@ -235,14 +237,32 @@ public class OVRCamera : OVRComponent
 			{				
 				// Read sensor here (prediction on or off)
 				if(CameraController.PredictionOn == false)
-					OVRDevice.GetOrientation(0, ref CameraOrientation);
+					OVRDevice.GetOrientation(0, name + ".SetCameraOrientation_Callback");
 				else
-					OVRDevice.GetPredictedOrientation(0, ref CameraOrientation);				
+					OVRDevice.GetPredictedOrientation(0, name + ".SetCameraOrientation_Callback");
+				
+				gotOrientation = true;
 			}
 			
 			// This needs to go as close to reading Rift orientation inputs
 			OVRDevice.ProcessLatencyInputs();			
 		}
+		
+		// If we never got the orientation, directly call the callback
+		if (!gotOrientation)
+		{
+			SetCameraOrientation_Callback(null);
+		}
+	}
+	public void SetCameraOrientation_Callback(string paramsStr)
+	{
+		if (paramsStr != null)
+		{
+			OVRDevice.GetOrientation_Callback(paramsStr, ref CameraOrientation);
+		}
+
+		Quaternion q;
+		Vector3    dir;
 		
 		// Calculate the rotation Y offset that is getting updated externally
 		// (i.e. like a controller rotation)

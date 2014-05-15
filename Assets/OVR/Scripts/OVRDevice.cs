@@ -31,11 +31,6 @@ using System.Runtime.InteropServices;
 //
 public class OVRDevice : MonoBehaviour 
 {
-	// Imported functions from 
-	// OVRPlugin.dll 	(PC)
-	// OVRPlugin.bundle (OSX)
-	// OVRPlugin.so 	(Linux, Android)
-	
 	// MessageList
 	[StructLayout(LayoutKind.Sequential)]
 	public struct MessageList
@@ -51,114 +46,6 @@ public class OVRDevice : MonoBehaviour
 			isLatencyTesterAttached = LatencyTester;
 		}
 	}
-	
-	// GLOBAL FUNCTIONS
-	[DllImport ("OculusPlugin", EntryPoint="OVR_Update")]
-	private static extern bool OVR_Update(ref MessageList messageList);	
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_Initialize();
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_Destroy();
-	
-	// SENSOR FUNCTIONS
-	[DllImport ("OculusPlugin")]
-    private static extern int OVR_GetSensorCount();
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_IsHMDPresent();
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_GetSensorOrientation(int sensorID, 
-														ref float w, 
-														ref float x, 
-														ref float y, 
-														ref float z);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_GetSensorPredictedOrientation(int sensorID, 
-															     ref float w, 
-																 ref float x, 
-																 ref float y, 
-																 ref float z);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_GetSensorPredictionTime(int sensorID, ref float predictionTime);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_SetSensorPredictionTime(int sensorID, float predictionTime);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_GetSensorAccelGain(int sensorID, ref float accelGain);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_SetSensorAccelGain(int sensorID, float accelGain);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_EnableYawCorrection(int sensorID, float enable);
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_ResetSensorOrientation(int sensorID);	
-	
-	// HMD FUNCTIONS
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_IsSensorPresent(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern System.IntPtr OVR_GetDisplayDeviceName();  
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetScreenResolution(ref int hResolution, ref int vResolution);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetScreenSize(ref float hSize, ref float vSize);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetEyeToScreenDistance(ref float eyeToScreenDistance);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetInterpupillaryDistance(ref float interpupillaryDistance);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetLensSeparationDistance(ref float lensSeparationDistance);
-	[DllImport ("OculusPlugin")]	
-	private static extern bool OVR_GetPlayerEyeHeight(ref float eyeHeight);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetEyeOffset(ref float leftEye, ref float rightEye);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetScreenVCenter(ref float vCenter);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_GetDistortionCoefficients(ref float k0, 
-														     ref float k1, 
-															 ref float k2, 
-															 ref float k3);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_RenderPortraitMode();
-	
-	// LATENCY TEST FUNCTIONS
-	[DllImport ("OculusPlugin")]
-    private static extern void OVR_ProcessLatencyInputs();
-	[DllImport ("OculusPlugin")]
-    private static extern bool OVR_DisplayLatencyScreenColor(ref byte r, 
-															ref byte g, 
-															ref byte b);
-	[DllImport ("OculusPlugin")]
-    private static extern System.IntPtr OVR_GetLatencyResultsString();
-	
-	
-	// MAGNETOMETER YAW-DRIFT CORRECTION FUNCTIONS
-	// AUTOMATIC
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_BeginMagAutoCalibraton(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_StopMagAutoCalibraton(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_UpdateMagAutoCalibration(int sensor);
-	// MANUAL
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_BeginMagManualCalibration(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_StopMagManualCalibration(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_UpdateMagManualCalibration(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern int OVR_MagManualCalibrationState(int sensor);
-	// SHARED
-	[DllImport ("OculusPlugin")]
-	private static extern int OVR_MagNumberOfSamples(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_IsMagCalibrated(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_EnableMagYawCorrection(int sensor, bool enable);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_IsYawCorrectionEnabled(int sensor);
-	[DllImport ("OculusPlugin")]
-	private static extern bool OVR_IsMagYawCorrectionInProgress(int sensor);
-	
 	
 	// Different orientations required for different trackers
 	enum SensorOrientation {Head, Other};
@@ -204,6 +91,9 @@ public class OVRDevice : MonoBehaviour
 	private static Dictionary<int,SensorOrientation> SensorOrientationList = 
 			   new Dictionary<int, SensorOrientation>(); 
 	
+	// List of functions to call on Init_Callback
+	private static List<Action> pendingInits = new List<Action>();
+
 	// * * * * * * * * * * * * *
 
 	// Awake
@@ -213,25 +103,39 @@ public class OVRDevice : MonoBehaviour
 		InitSensorList(false); 
 		InitOrientationSensorList();
 		
-		OVRInit = OVR_Initialize();
-	
-		if(OVRInit == false) 
-			return;
+		Application.ExternalEval("OVR_Init()");
+	}
+	void Init_Callback(string paramsStr)
+	{
+		OVRInit = true;
 
 		// * * * * * * *
 		// DISPLAY SETUP
 		
+		string[] paramArray = paramsStr.Split('|');
+
 		// We will get the HMD so that we can eventually target it within Unity
-		DisplayDeviceName += Marshal.PtrToStringAnsi(OVR_GetDisplayDeviceName());
+		DisplayDeviceName += paramArray[0];
+
+		HResolution            = int.Parse(paramArray[1]);
+		VResolution            = int.Parse(paramArray[2]);
+		HScreenSize            = float.Parse(paramArray[3]);
+		VScreenSize            = float.Parse(paramArray[4]);
+		ScreenVCenter          = float.Parse(paramArray[5]);
+		EyeToScreenDistance    = float.Parse(paramArray[6]);
+		LensSeparationDistance = float.Parse(paramArray[7]);
+		DistK0                 = float.Parse(paramArray[8]);
+		DistK1                 = float.Parse(paramArray[9]);
+		DistK2                 = float.Parse(paramArray[10]);
+		DistK3                 = float.Parse(paramArray[11]);
+#if TO_BE_IMPLEMENTED
+		LeftEyeOffset          = float.Parse(paramArray[12]);
+		RightEyeOffset         = float.Parse(paramArray[13]);
+		SensorCount            = int.Parse(paramArray[14]);
+#else
+		SensorCount            = 2;
+#endif
 		
-		OVR_GetScreenResolution (ref HResolution, ref VResolution);
-		OVR_GetScreenSize (ref HScreenSize, ref VScreenSize);
-		OVR_GetEyeToScreenDistance(ref EyeToScreenDistance);
-		OVR_GetLensSeparationDistance(ref LensSeparationDistance);
-		OVR_GetEyeOffset (ref LeftEyeOffset, ref RightEyeOffset);
-		OVR_GetScreenVCenter (ref ScreenVCenter);
-		OVR_GetDistortionCoefficients( ref DistK0, ref DistK1, ref DistK2, ref DistK3);
-	
 		// Distortion fit parameters based on if we are using a 5" (Prototype, DK2+) or 7" (DK1) 
 		if (HScreenSize < 0.140f) 	// 5.5"
 		{
@@ -251,20 +155,33 @@ public class OVRDevice : MonoBehaviour
 		// * * * * * * *
 		// SENSOR SETUP
 		
-		SensorCount = OVR_GetSensorCount();
-		
 		// PredictionTime set, to init sensor directly
 		if(PredictionTime > 0.0f)
-            OVR_SetSensorPredictionTime(SensorList[0], PredictionTime);
+			Application.ExternalEval("OVR_SetSensorPredictionTime(" + SensorList[0] + "|" + PredictionTime + ")");
 		else
 			SetPredictionTime(SensorList[0], InitialPredictionTime);	
 		
 		// AcelGain set, used to correct gyro with accel. 
 		// Default value is appropriate for typical use.
 		if(AccelGain > 0.0f)
-            OVR_SetSensorAccelGain(SensorList[0], AccelGain);
+            Application.ExternalEval("OVR_SetSensorAccelGain(" + SensorList[0] + "|" + AccelGain + ")");
 		else
 			SetAccelGain(SensorList[0], InitialAccelGain);	
+
+		// Kick off any pending inits
+		foreach (Action init in pendingInits)
+		{
+			init();
+		}
+		pendingInits.Clear();
+	}
+
+	public static void CallWhenInitDone(Action action)
+	{
+		if (OVRInit)
+			action();
+		else
+			pendingInits.Add(action);
 	}
    
 	// Start (Note: make sure to always have a Start function for classes that have
@@ -278,8 +195,16 @@ public class OVRDevice : MonoBehaviour
 	// run things that need to be updated in our game thread
 	void Update()
 	{	
+		Application.ExternalEval("OVR_Update()");
+	}
+	void Update_Callback(string paramsStr)
+	{
 		MessageList oldMsgList = MsgList;
-		OVR_Update(ref MsgList);
+
+		string[] paramArray = paramsStr.Split('|');
+		MsgList.isHMDSensorAttached     = byte.Parse(paramArray[0]);
+		MsgList.isHMDAttached           = byte.Parse(paramArray[1]);
+		MsgList.isLatencyTesterAttached = byte.Parse(paramArray[2]);
 		
 		// HMD SENSOR
 		if((MsgList.isHMDSensorAttached != 0) && 
@@ -327,12 +252,14 @@ public class OVRDevice : MonoBehaviour
 	// OnDestroy
 	void OnDestroy()
 	{
+#if TO_BE_IMPLEMENTED
 		// We may want to turn this off so that values are maintained between level / scene loads
 		if(ResetTracker == true)
 		{
 			OVR_Destroy();
 			OVRInit = false;
 		}
+#endif
 	}
 	
 	
@@ -349,52 +276,65 @@ public class OVRDevice : MonoBehaviour
 	// HMDPreset
 	public static bool IsHMDPresent()
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_IsHMDPresent();
+#else
+		return false;
+#endif
 	}
 
 	// SensorPreset
 	public static bool IsSensorPresent(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_IsSensorPresent(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 
 	// GetOrientation
-	public static bool GetOrientation(int sensor, ref Quaternion q)
+	public static void GetOrientation(int sensor, string callback)
 	{
-		float w = 0, x = 0, y = 0, z = 0;
-
-        if (OVR_GetSensorOrientation(SensorList[sensor], ref w, ref x, ref y, ref z) == true)
+		Application.ExternalEval("OVR_GetSensorOrientation(" + SensorList[sensor] + "|" + false + "|" + callback + ")");
+	}
+	
+	// GetPredictedOrientation
+	public static void GetPredictedOrientation(int sensor, string callback)
+	{
+		Application.ExternalEval("OVR_GetSensorOrientation(" + SensorList[sensor] + "|" + true + "|" + callback + ")");
+	}
+	
+	// GetOrientation_Callback
+	public static bool GetOrientation_Callback(string paramsStr, ref Quaternion q)
+	{
+		string[] paramArray = paramsStr.Split('|');
+		int sensor = int.Parse(paramArray[0]);
+		if(bool.Parse(paramArray[1]))
 		{
-			q.w = w; q.x = x; q.y = y; q.z = z;	
-			OrientSensor(sensor, ref q);
-						
-			return true;
+			if(sensor == 0)
+			{
+				q.w = float.Parse(paramArray[2]);
+				q.x = float.Parse(paramArray[3]);
+				q.y = float.Parse(paramArray[4]);
+				q.z = float.Parse(paramArray[5]);
+				OrientSensor(sensor, ref q);
+
+				return true;
+			}
 		}
 		
 		return false;
 	}
-	
-	// GetPredictedOrientation
-	public static bool GetPredictedOrientation(int sensor, ref Quaternion q)
-	{
-		float w = 0, x = 0, y = 0, z = 0;
-
-        if (OVR_GetSensorPredictedOrientation(SensorList[sensor], ref w, ref x, ref y, ref z) == true)
-		{
-			q.w = w; q.x = x; q.y = y; q.z = z;	
-			OrientSensor(sensor, ref q);
-	
-			return true;
-		}
-		
-		return false;
-
-	}		
 	
 	// ResetOrientation
 	public static bool ResetOrientation(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
         return OVR_ResetSensorOrientation(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// GetPredictionTime
@@ -407,6 +347,7 @@ public class OVRDevice : MonoBehaviour
 	// SetPredictionTime
 	public static bool SetPredictionTime(int sensor, float predictionTime)
 	{
+#if TO_BE_IMPLEMENTED
 		if ( (predictionTime > 0.0f) &&
              (OVR_SetSensorPredictionTime(SensorList[sensor], predictionTime) == true))
 		{
@@ -414,6 +355,7 @@ public class OVRDevice : MonoBehaviour
 			return true;
 		}
 		
+#endif
 		return false;
 	}
 	
@@ -426,6 +368,7 @@ public class OVRDevice : MonoBehaviour
 	// SetAccelGain
 	public static bool SetAccelGain(int sensor, float accelGain)
 	{
+#if TO_BE_IMPLEMENTED
 		if ( (accelGain > 0.0f) &&
              (OVR_SetSensorAccelGain(SensorList[sensor], accelGain) == true))
 		{
@@ -433,6 +376,7 @@ public class OVRDevice : MonoBehaviour
 			return true;
 		}
 		
+#endif
 		return false;
 	}
 	
@@ -486,12 +430,16 @@ public class OVRDevice : MonoBehaviour
 	// GetIPD
 	public static bool GetIPD(ref float IPD)
 	{
+#if TO_BE_IMPLEMENTED
 		if(!OVRInit)
 			return false;
 
 		OVR_GetInterpupillaryDistance(ref IPD);
 		
 		return true;
+#else
+		return false;
+#endif
 	}
 		
 	// CalculateAspectRatio
@@ -557,19 +505,29 @@ public class OVRDevice : MonoBehaviour
 	// LatencyProcessInputs
     public static void ProcessLatencyInputs()
 	{
+#if TO_BE_IMPLEMENTED
         OVR_ProcessLatencyInputs();
+#endif
 	}
 	
 	// LatencyProcessInputs
     public static bool DisplayLatencyScreenColor(ref byte r, ref byte g, ref byte b)
 	{
+#if TO_BE_IMPLEMENTED
         return OVR_DisplayLatencyScreenColor(ref r, ref g, ref b);
+#else
+		return false;
+#endif
 	}
 	
 	// LatencyGetResultsString
     public static System.IntPtr GetLatencyResultsString()
 	{
+#if TO_BE_IMPLEMENTED
         return OVR_GetLatencyResultsString();
+#else
+		return System.IntPtr.Zero;
+#endif
 	}
 	
 	// Computes scale that should be applied to the input render texture
@@ -610,19 +568,31 @@ public class OVRDevice : MonoBehaviour
 	// BeginMagAutoCalibraton
 	public static bool BeginMagAutoCalibration(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_BeginMagAutoCalibraton(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// StopMagAutoCalibraton
 	public static bool StopMagAutoCalibration(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_StopMagAutoCalibraton(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// UpdateMagAutoCalibration
 	public static bool UpdateMagAutoCalibration(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_UpdateMagAutoCalibration(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// MANUAL MAG CALIBRATION FUNCTIONS
@@ -630,26 +600,42 @@ public class OVRDevice : MonoBehaviour
 	// BeginMagManualCalibration
 	public static bool BeginMagManualCalibration(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_BeginMagManualCalibration(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// StopMagManualCalibration
 	public static bool StopMagManualCalibration(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_StopMagManualCalibration(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// UpdateMagManualCalibration
 	public static bool UpdateMagManualCalibration(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_UpdateMagManualCalibration(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// OVR_MagManualCalibrationState
 	// 0 = Forward, 1 = Up, 2 = Left, 3 = Right, 4 = Upper-Right, 5 = FAIL, 6 = SUCCESS!
 	public static int MagManualCalibrationState(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_MagManualCalibrationState(SensorList[sensor]);
+#else
+		return 0;
+#endif
 	}
 	
 	// SHARED MAG CALIBRATION FUNCTIONS
@@ -657,31 +643,51 @@ public class OVRDevice : MonoBehaviour
 	// MagNumberOfSamples
 	public static int MagNumberOfSamples(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_MagNumberOfSamples(SensorList[sensor]);
+#else
+		return 0;
+#endif
 	}
 
 	// IsMagCalibrated
 	public static bool IsMagCalibrated(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_IsMagCalibrated(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// EnableMagYawCorrection
 	public static bool EnableMagYawCorrection(int sensor, bool enable)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_EnableMagYawCorrection(SensorList[sensor], enable);
+#else
+		return false;
+#endif
 	}
 	
 	// OVR_IsYawCorrectionEnabled
 	public static bool IsYawCorrectionEnabled(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_IsYawCorrectionEnabled(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// IsMagYawCorrectionInProgress
 	public static bool IsMagYawCorrectionInProgress(int sensor)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_IsMagYawCorrectionInProgress(SensorList[sensor]);
+#else
+		return false;
+#endif
 	}
 	
 	// InitSensorList:
@@ -742,13 +748,20 @@ public class OVRDevice : MonoBehaviour
 	// RenderPortraitMode
 	public static bool RenderPortraitMode()
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_RenderPortraitMode();
+#else
+		return false;
+#endif
 	}
 	
 	// GetPlayerEyeHeight
 	public static bool GetPlayerEyeHeight(ref float eyeHeight)
 	{
+#if TO_BE_IMPLEMENTED
 		return OVR_GetPlayerEyeHeight(ref eyeHeight);
+#else
+		return false;
+#endif
 	}
-	
 }
